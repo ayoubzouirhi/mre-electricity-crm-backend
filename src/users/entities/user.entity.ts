@@ -23,4 +23,7 @@ export class User {
 
   @Field(() => Role)
   role: Role;
+
+  @Field(() => Int, { nullable: true })
+  environmentId?: number;
 }

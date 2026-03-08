@@ -9,10 +9,12 @@ type User {
   firstname: String
   lastname: String
   role: Role!
+  environmentId: Int
 }
 
 """The user roles for authorization"""
 enum Role {
+  SUPER_ADMIN
   ADMIN
   RESPONSABLE
   AGENT
@@ -23,10 +25,18 @@ type AuthResponse {
   user: User!
 }
 
+type Environment {
+  id: Int!
+  name: String!
+  description: String
+}
+
 type Query {
   me: User!
   user(id: Int!): User!
   users(role: String): [User!]!
+  environments: [Environment!]!
+  environment(id: Int!): Environment!
 }
 
 type Mutation {
@@ -35,18 +45,23 @@ type Mutation {
   removeUser(id: Int!): User!
   signup(signupInput: SignupInput!): AuthResponse!
   signin(signinInput: SigninInput!): AuthResponse!
+  createEnvironment(createEnvironmentInput: CreateEnvironmentInput!): Environment!
+  updateEnvironment(updateEnvironmentInput: UpdateEnvironmentInput!): Environment!
+  removeEnvironment(id: Int!): Environment!
 }
 
 input CreateUserInput {
   email: String!
   password: String!
   role: Role
+  environment: Int
 }
 
 input UpdateUserInput {
   email: String
   password: String
   role: Role
+  environment: Int
   firstname: String
   lastname: String!
 }
@@ -59,4 +74,15 @@ input SignupInput {
 input SigninInput {
   email: String!
   password: String!
+}
+
+input CreateEnvironmentInput {
+  name: String!
+  description: String
+}
+
+input UpdateEnvironmentInput {
+  name: String
+  description: String
+  id: Int!
 }

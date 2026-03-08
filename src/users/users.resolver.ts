@@ -11,7 +11,10 @@ import { CreateUserInput } from './dto/create-user.input';
 import { UpdateUserInput } from './dto/update-user.input';
 import { Get, UseGuards } from '@nestjs/common';
 import { GqlAuthGuard } from 'src/auth/guard/gql-auth.guard';
-import { GetUser } from 'src/auth/decorator';
+import {
+  CurrentEnv,
+  GetUser,
+} from 'src/auth/decorator';
 import { Roles } from 'src/auth/decorator/roles.decorators';
 import { Role } from 'src/auth/enums';
 import { RolesGuard } from 'src/auth/guard/roles.guard';
@@ -35,8 +38,6 @@ export class UsersResolver {
     );
   }
 
-  @UseGuards(RolesGuard)
-  @Roles(Role.AGENT)
   @Query(() => User, { name: 'me' })
   getMe(@GetUser() user: User) {
     return user;
@@ -68,14 +69,19 @@ export class UsersResolver {
   @UseGuards(RolesGuard)
   @Roles(Role.ADMIN)
   @Query(() => User, { name: 'user' })
-  findOne(@Args('id', {type: () => Int }) id: number) {
+  findOne(
+    @Args('id', { type: () => Int }) id: number,
+  ) {
     return this.usersService.findOne(id);
   }
 
   @UseGuards(RolesGuard)
   @Roles(Role.ADMIN)
   @Query(() => [User], { name: 'users' })
-  findAll(@Args('role', { nullable: true }) role?: Role) {
-    return this.usersService.findAll(role);
+  findAll(
+    @Args('role', { nullable: true }) role?: Role,
+    @CurrentEnv() envId?: number,
+  ) {
+    return this.usersService.findAll(role, envId);
   }
 }

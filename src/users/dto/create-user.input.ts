@@ -1,10 +1,12 @@
 import {
   InputType,
   Field,
+  Int,
 } from '@nestjs/graphql';
 import {
   IsEmail,
   IsEnum,
+  IsInt,
   IsNotEmpty,
   IsOptional,
   MinLength,
@@ -33,4 +35,9 @@ export class CreateUserInput {
   @IsEnum(Role)
   @IsOptional()
   role?: Role;
+
+  @IsInt()
+  @IsOptional()
+  @Field(() => Int, { nullable: true })
+  environment?: number;
 }

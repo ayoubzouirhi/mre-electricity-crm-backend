@@ -50,6 +50,8 @@ prisma/migrations/20260304114517_init/migration.sql
 prisma/migrations/20260304140629_rename_user_table/migration.sql
 prisma/migrations/20260306113154_add_user_role/migration.sql
 prisma/migrations/20260306140636_update_role/migration.sql
+prisma/migrations/20260307145813_add_multi_env/migration.sql
+prisma/migrations/20260307221909_add_super_admin_role/migration.sql
 prisma/migrations/migration_lock.toml
 prisma/schema.prisma
 README.md
@@ -61,6 +63,7 @@ src/auth/auth.module.ts
 src/auth/auth.resolver.ts
 src/auth/auth.service.ts
 src/auth/auth.types.ts
+src/auth/decorator/current-env.decorator.ts
 src/auth/decorator/get-user.decorator.ts
 src/auth/decorator/index.ts
 src/auth/decorator/roles.decorators.ts
@@ -72,6 +75,12 @@ src/auth/enums/index.ts
 src/auth/guard/gql-auth.guard.ts
 src/auth/guard/roles.guard.ts
 src/auth/strategy/jwt.strategy.ts
+src/environments/dto/create-environment.input.ts
+src/environments/dto/update-environment.input.ts
+src/environments/entities/environment.entity.ts
+src/environments/environments.module.ts
+src/environments/environments.resolver.ts
+src/environments/environments.service.ts
 src/main.ts
 src/prisma/prisma.module.ts
 src/prisma/prisma.service.ts
@@ -90,6 +99,185 @@ tsconfig.json
 
 <files>
 This section contains the contents of the repository's files.
+
+<file path="prisma/migrations/20260307145813_add_multi_env/migration.sql">
+-- AlterTable
+ALTER TABLE `users` ADD COLUMN `environmentId` INTEGER NULL;
+
+-- CreateTable
+CREATE TABLE `environments` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+    `name` VARCHAR(191) NOT NULL,
+    `description` VARCHAR(191) NULL,
+
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- AddForeignKey
+ALTER TABLE `users` ADD CONSTRAINT `users_environmentId_fkey` FOREIGN KEY (`environmentId`) REFERENCES `environments`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+</file>
+
+<file path="prisma/migrations/20260307221909_add_super_admin_role/migration.sql">
+-- AlterTable
+ALTER TABLE `users` MODIFY `role` ENUM('SUPER_ADMIN', 'ADMIN', 'RESPONSABLE', 'AGENT') NOT NULL DEFAULT 'AGENT';
+</file>
+
+<file path="src/auth/decorator/current-env.decorator.ts">
+import {
+  createParamDecorator,
+  ExecutionContext,
+} from '@nestjs/common';
+import { GqlExecutionContext } from '@nestjs/graphql';
+
+export const CurrentEnv = createParamDecorator(
+  (data: unknown, context: ExecutionContext) => {
+    const ctx =
+      GqlExecutionContext.create(context);
+    return ctx.getContext().enviromentId;
+  },
+);
+</file>
+
+<file path="src/environments/dto/create-environment.input.ts">
+import {
+  InputType,
+  Field,
+} from '@nestjs/graphql';
+import {
+  IsNotEmpty,
+  IsOptional,
+} from 'class-validator';
+
+@InputType()
+export class CreateEnvironmentInput {
+  @IsNotEmpty()
+  @Field()
+  name: string;
+
+  @IsOptional()
+  @Field({ nullable: true })
+  description?: string;
+}
+</file>
+
+<file path="src/environments/dto/update-environment.input.ts">
+import { CreateEnvironmentInput } from './create-environment.input';
+import { InputType, Field, Int, PartialType } from '@nestjs/graphql';
+
+@InputType()
+export class UpdateEnvironmentInput extends PartialType(CreateEnvironmentInput) {
+  @Field(() => Int)
+  id: number;
+}
+</file>
+
+<file path="src/environments/entities/environment.entity.ts">
+import { ObjectType, Field, Int } from '@nestjs/graphql';
+
+@ObjectType()
+export class Environment {
+  @Field(() => Int)
+  id: number;
+
+  @Field()
+  name: string
+  
+  @Field({nullable: true})
+  description?: string
+}
+</file>
+
+<file path="src/environments/environments.module.ts">
+import { Module } from '@nestjs/common';
+import { EnvironmentsService } from './environments.service';
+import { EnvironmentsResolver } from './environments.resolver';
+
+@Module({
+  providers: [EnvironmentsResolver, EnvironmentsService],
+})
+export class EnvironmentsModule {}
+</file>
+
+<file path="src/environments/environments.resolver.ts">
+import { Resolver, Query, Mutation, Args, Int } from '@nestjs/graphql';
+import { EnvironmentsService } from './environments.service';
+import { Environment } from './entities/environment.entity';
+import { CreateEnvironmentInput } from './dto/create-environment.input';
+import { UpdateEnvironmentInput } from './dto/update-environment.input';
+import { UseGuards } from '@nestjs/common';
+import { GqlAuthGuard } from 'src/auth/guard/gql-auth.guard';
+import { Role } from '@prisma/client';
+import { RolesGuard } from 'src/auth/guard/roles.guard';
+import { Roles } from 'src/auth/decorator';
+
+@UseGuards(GqlAuthGuard, RolesGuard)
+@Roles(Role.ADMIN)
+@Resolver(() => Environment)
+export class EnvironmentsResolver {
+  constructor(private  environmentsService: EnvironmentsService) {}
+
+  @Mutation(() => Environment)
+  createEnvironment(@Args('createEnvironmentInput') createEnvironmentInput: CreateEnvironmentInput) {
+    return this.environmentsService.create(createEnvironmentInput);
+  }
+
+  @Query(() => [Environment], { name: 'environments' })
+  findAll() {
+    return this.environmentsService.findAll();
+  }
+
+  @Query(() => Environment, { name: 'environment' })
+  findOne(@Args('id', { type: () => Int }) id: number) {
+    return this.environmentsService.findOne(id);
+  }
+
+  @Mutation(() => Environment)
+  updateEnvironment(@Args('updateEnvironmentInput') updateEnvironmentInput: UpdateEnvironmentInput) {
+    return this.environmentsService.update(updateEnvironmentInput.id, updateEnvironmentInput);
+  }
+
+  @Mutation(() => Environment)
+  removeEnvironment(@Args('id', { type: () => Int }) id: number) {
+    return this.environmentsService.remove(id);
+  }
+}
+</file>
+
+<file path="src/environments/environments.service.ts">
+import { Injectable } from '@nestjs/common';
+import { CreateEnvironmentInput } from './dto/create-environment.input';
+import { UpdateEnvironmentInput } from './dto/update-environment.input';
+import { PrismaService } from 'src/prisma/prisma.service';
+
+@Injectable()
+export class EnvironmentsService {
+  constructor( private prisma: PrismaService){}
+  async create(createEnvironmentInput: CreateEnvironmentInput) {
+      const environment = await this.prisma.environment.create({
+        data: {...createEnvironmentInput}
+      })
+    return environment;
+  }
+
+  findAll() {
+    return `This action returns all environments`;
+  }
+
+  findOne(id: number) {
+    return `This action returns a #${id} environment`;
+  }
+
+  update(id: number, updateEnvironmentInput: UpdateEnvironmentInput) {
+    return `This action updates a #${id} environment`;
+  }
+
+  remove(id: number) {
+    return `This action removes a #${id} environment`;
+  }
+}
+</file>
 
 <file path=".gitignore">
 # Created by .ignore support plugin (hsz.mobi)
@@ -759,9 +947,23 @@ datasource db {
 }
 
 enum Role {
-  ADMIN 
+  SUPER_ADMIN
+  ADMIN
   RESPONSABLE
   AGENT
+}
+
+model Environment {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  name        String
+  description String?
+
+  users User[]
+
+  @@map("environments")
 }
 
 model User {
@@ -775,7 +977,9 @@ model User {
   firstname String?
   lastname  String?
 
-  role  Role @default(AGENT)
+  role          Role         @default(AGENT)
+  environmentId Int?
+  environment   Environment? @relation(fields: [environmentId], references: [id])
 
   @@map("users")
 }
@@ -920,6 +1124,7 @@ import { UsersModule } from './users/users.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
+import { EnvironmentsModule } from './environments/environments.module';
 
 @Module({
   imports: [
@@ -927,6 +1132,13 @@ import { AuthModule } from './auth/auth.module';
       driver: ApolloDriver,
       autoSchemaFile: join(process.cwd(), 'src/schema.gql'), 
       playground: true, 
+      context: ({ req }) => {
+        const envId = req.headers['x-environment-id'];
+        return {
+          req,
+          enviromentId: envId ? parseInt(envId as string, 10) : null,
+        }
+      }
     }),
     ConfigModule.forRoot({
       isGlobal: true, 
@@ -934,6 +1146,7 @@ import { AuthModule } from './auth/auth.module';
     UsersModule,
     PrismaModule,
     AuthModule,
+    EnvironmentsModule,
   ],
 })
 export class AppModule {}
@@ -1138,6 +1351,7 @@ export const GetUser = createParamDecorator(
 <file path="src/auth/decorator/index.ts">
 export * from './get-user.decorator';
 export * from './roles.decorators';
+export * from './current-env.decorator';
 </file>
 
 <file path="src/auth/decorator/roles.decorators.ts">
@@ -1216,20 +1430,6 @@ export class AuthResponse {
     user: User;
 
 }
-</file>
-
-<file path="src/auth/enums/enums.ts">
-import { registerEnumType } from "@nestjs/graphql";
-
-export enum Role {
-  ADMIN = 'ADMIN',
-  RESPONSABLE = 'RESPONSABLE',
-  AGENT = 'AGENT',
-}
-
-registerEnumType(Role, {
-  name: 'Role', 
-});
 </file>
 
 <file path="src/auth/enums/index.ts">
@@ -1388,77 +1588,16 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
 }
 </file>
 
-<file path="src/schema.gql">
-# ------------------------------------------------------
-# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
-# ------------------------------------------------------
-
-type User {
-  """Example field (placeholder)"""
-  id: Int!
-  email: String!
-  firstname: String
-  lastname: String
-  role: Role!
-}
-
-enum Role {
-  ADMIN
-  RESPONSABLE
-  AGENT
-}
-
-type AuthResponse {
-  accessToken: String!
-  user: User!
-}
-
-type Query {
-  me: User!
-  user: User!
-}
-
-type Mutation {
-  createUser(createUserInput: CreateUserInput!): User!
-  updateUser(updateUserInput: UpdateUserInput!): User!
-  removeUser: User!
-  signup(signupInput: SignupInput!): AuthResponse!
-  signin(signinInput: SigninInput!): AuthResponse!
-}
-
-input CreateUserInput {
-  email: String!
-  password: String!
-  role: Role
-}
-
-input UpdateUserInput {
-  email: String
-  password: String
-  role: Role
-  firstname: String!
-  lastname: String!
-}
-
-input SignupInput {
-  email: String!
-  password: String!
-}
-
-input SigninInput {
-  email: String!
-  password: String!
-}
-</file>
-
 <file path="src/users/dto/create-user.input.ts">
 import {
   InputType,
   Field,
+  Int,
 } from '@nestjs/graphql';
 import {
   IsEmail,
   IsEnum,
+  IsInt,
   IsNotEmpty,
   IsOptional,
   MinLength,
@@ -1487,31 +1626,11 @@ export class CreateUserInput {
   @IsEnum(Role)
   @IsOptional()
   role?: Role;
-}
-</file>
 
-<file path="src/users/dto/update-user.input.ts">
-import { IsOptional } from 'class-validator';
-import { CreateUserInput } from './create-user.input';
-import {
-  InputType,
-  Field,
-  Int,
-  PartialType,
-} from '@nestjs/graphql';
-
-@InputType()
-export class UpdateUserInput extends PartialType(
-  CreateUserInput,
-) {
-  
+  @IsInt()
   @IsOptional()
-  @Field()
-  firstname?: string;
-
-  @IsOptional()
-  @Field()
-  lastname?: string;
+  @Field(() => Int, { nullable: true })
+  environment?: number;
 }
 </file>
 
@@ -1541,6 +1660,9 @@ export class User {
 
   @Field(() => Role)
   role: Role;
+
+  @Field(() => Int, { nullable: true })
+  environmentId?: number;
 }
 </file>
 
@@ -1553,153 +1675,6 @@ import { UsersResolver } from './users.resolver';
   providers: [UsersResolver, UsersService],
 })
 export class UsersModule {}
-</file>
-
-<file path="src/users/users.resolver.ts">
-import {
-  Resolver,
-  Query,
-  Mutation,
-  Args,
-  Int,
-} from '@nestjs/graphql';
-import { UsersService } from './users.service';
-import { User } from './entities/user.entity';
-import { CreateUserInput } from './dto/create-user.input';
-import { UpdateUserInput } from './dto/update-user.input';
-import { Get, UseGuards } from '@nestjs/common';
-import { GqlAuthGuard } from 'src/auth/guard/gql-auth.guard';
-import { GetUser } from 'src/auth/decorator';
-import { Roles } from 'src/auth/decorator/roles.decorators';
-import { Role } from 'src/auth/enums';
-import { RolesGuard } from 'src/auth/guard/roles.guard';
-
-@UseGuards(GqlAuthGuard)
-@Resolver(() => User)
-export class UsersResolver {
-  constructor(
-    private readonly usersService: UsersService,
-  ) {}
-
-  @UseGuards(RolesGuard)
-  @Roles(Role.ADMIN)
-  @Mutation(() => User)
-  createUser(
-    @Args('createUserInput')
-    createUserInput: CreateUserInput,
-  ) {
-    return this.usersService.create(
-      createUserInput,
-    );
-  }
-
-  @UseGuards(RolesGuard)
-  @Roles(Role.AGENT)
-  @Query(() => User, { name: 'me' })
-  getMe(@GetUser() user: User) {
-    return user;
-  }
-
-  @UseGuards(RolesGuard)
-  @Mutation(() => User, { name: 'updateUser' })
-  updateUser(
-    @Args('updateUserInput')
-    updateUserInput: UpdateUserInput,
-    @GetUser('id') user: number,
-  ) {
-    return this.usersService.update(
-      updateUserInput,
-      user,
-    );
-  }
-
-  @UseGuards(RolesGuard)
-  @Roles(Role.ADMIN)
-  @Mutation(() => User, { name: 'removeUser' })
-  removeUser(@GetUser('id') userId: number) {
-    return this.usersService.remove(userId);
-  }
-
-
-  @Query(() => User, { name: 'user' })
-  findOne(@GetUser('id') userId: number) {
-    return this.usersService.findOne(userId);
-  }
-}
-</file>
-
-<file path="src/users/users.service.ts">
-import { Injectable } from '@nestjs/common';
-import { CreateUserInput } from './dto/create-user.input';
-import { UpdateUserInput } from './dto/update-user.input';
-import { PrismaService } from 'src/prisma/prisma.service';
-import * as argon2 from 'argon2';
-
-@Injectable()
-export class UsersService {
-  constructor(private prisma: PrismaService) {}
-
-  async create(createUserInput: CreateUserInput) {
-    const hash = await argon2.hash(
-      createUserInput.password,
-    );
-    try {
-      const user = await this.prisma.user.create({
-        data: {
-          email: createUserInput.email,
-          hash,
-          role: createUserInput.role,
-        },
-      });
-      return user;
-    } catch (error) {
-      if (error.code === 'P2002') {
-        throw new Error('Email already exists');
-      }
-      throw error;
-    }
-  }
-
-  async update(
-    updateUserInput: UpdateUserInput,
-    userId: number,
-  ) {
-    try {
-      const user = this.prisma.user.update({
-        where: { id: userId },
-        data: { ...updateUserInput },
-      });
-      return user;
-    } catch (error) {
-      if (error.code === 'P2002') {
-        throw new Error('Email already exists');
-      }
-      throw error;
-    }
-  }
-
-  async remove(userId: number) {
-    const user = await this.prisma.user.delete({
-      where: { id: userId },
-    });
-    return (
-      'User with id ' +
-      user.id +
-      ' has been removed.'
-    );
-  }
-
-  async findOne(userId: number) {
-      const user = await this.prisma.user.findUnique({
-        where: { id: userId },
-      });
-      return user;
-      }
-      
-    findAll() {
-      return this.prisma.user.findMany();
-    }
-  }
 </file>
 
 <file path="test/app.e2e-spec.ts">
@@ -1770,6 +1745,359 @@ describe('AppController (e2e)', () => {
     "incremental": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true
+  }
+}
+</file>
+
+<file path="src/auth/enums/enums.ts">
+import { registerEnumType } from '@nestjs/graphql';
+import { Role } from '@prisma/client';
+
+registerEnumType(Role, {
+  name: 'Role',
+  description: 'The user roles for authorization',
+});
+
+export { Role };
+</file>
+
+<file path="src/schema.gql">
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type User {
+  """Example field (placeholder)"""
+  id: Int!
+  email: String!
+  firstname: String
+  lastname: String
+  role: Role!
+  environmentId: Int
+}
+
+"""The user roles for authorization"""
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  RESPONSABLE
+  AGENT
+}
+
+type AuthResponse {
+  accessToken: String!
+  user: User!
+}
+
+type Environment {
+  id: Int!
+  name: String!
+  description: String
+}
+
+type Query {
+  me: User!
+  user(id: Int!): User!
+  users(role: String): [User!]!
+  environments: [Environment!]!
+  environment(id: Int!): Environment!
+}
+
+type Mutation {
+  createUser(createUserInput: CreateUserInput!): User!
+  updateUser(updateUserInput: UpdateUserInput!): User!
+  removeUser(id: Int!): User!
+  signup(signupInput: SignupInput!): AuthResponse!
+  signin(signinInput: SigninInput!): AuthResponse!
+  createEnvironment(createEnvironmentInput: CreateEnvironmentInput!): Environment!
+  updateEnvironment(updateEnvironmentInput: UpdateEnvironmentInput!): Environment!
+  removeEnvironment(id: Int!): Environment!
+}
+
+input CreateUserInput {
+  email: String!
+  password: String!
+  role: Role
+  environment: Int
+}
+
+input UpdateUserInput {
+  email: String
+  password: String
+  role: Role
+  environment: Int
+  firstname: String
+  lastname: String!
+}
+
+input SignupInput {
+  email: String!
+  password: String!
+}
+
+input SigninInput {
+  email: String!
+  password: String!
+}
+
+input CreateEnvironmentInput {
+  name: String!
+  description: String
+}
+
+input UpdateEnvironmentInput {
+  name: String
+  description: String
+  id: Int!
+}
+</file>
+
+<file path="src/users/dto/update-user.input.ts">
+import { IsOptional } from 'class-validator';
+import { CreateUserInput } from './create-user.input';
+import {
+  InputType,
+  Field,
+  PartialType,
+} from '@nestjs/graphql';
+
+@InputType()
+export class UpdateUserInput extends PartialType(
+  CreateUserInput,
+) {
+  @Field({ nullable: true })
+  @IsOptional()
+  firstname?: string;
+
+  @IsOptional()
+  @Field()
+  lastname?: string;
+}
+</file>
+
+<file path="src/users/users.resolver.ts">
+import {
+  Resolver,
+  Query,
+  Mutation,
+  Args,
+  Int,
+} from '@nestjs/graphql';
+import { UsersService } from './users.service';
+import { User } from './entities/user.entity';
+import { CreateUserInput } from './dto/create-user.input';
+import { UpdateUserInput } from './dto/update-user.input';
+import { Get, UseGuards } from '@nestjs/common';
+import { GqlAuthGuard } from 'src/auth/guard/gql-auth.guard';
+import {
+  CurrentEnv,
+  GetUser,
+} from 'src/auth/decorator';
+import { Roles } from 'src/auth/decorator/roles.decorators';
+import { Role } from 'src/auth/enums';
+import { RolesGuard } from 'src/auth/guard/roles.guard';
+
+@UseGuards(GqlAuthGuard)
+@Resolver(() => User)
+export class UsersResolver {
+  constructor(
+    private readonly usersService: UsersService,
+  ) {}
+
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
+  @Mutation(() => User)
+  createUser(
+    @Args('createUserInput')
+    createUserInput: CreateUserInput,
+  ) {
+    return this.usersService.create(
+      createUserInput,
+    );
+  }
+
+  @Query(() => User, { name: 'me' })
+  getMe(@GetUser() user: User) {
+    return user;
+  }
+
+  @UseGuards(RolesGuard)
+  @Mutation(() => User, { name: 'updateUser' })
+  updateUser(
+    @Args('updateUserInput')
+    updateUserInput: UpdateUserInput,
+    @GetUser('id') user: number,
+  ) {
+    return this.usersService.update(
+      updateUserInput,
+      user,
+    );
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
+  @Mutation(() => User, { name: 'removeUser' })
+  removeUser(
+    @Args('id', { type: () => Int })
+    targetUserId: number,
+  ) {
+    return this.usersService.remove(targetUserId);
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
+  @Query(() => User, { name: 'user' })
+  findOne(
+    @Args('id', { type: () => Int }) id: number,
+  ) {
+    return this.usersService.findOne(id);
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
+  @Query(() => [User], { name: 'users' })
+  findAll(
+    @Args('role', { nullable: true }) role?: Role,
+    @CurrentEnv() envId?: number,
+  ) {
+    return this.usersService.findAll(role, envId);
+  }
+}
+</file>
+
+<file path="src/users/users.service.ts">
+import {
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { CreateUserInput } from './dto/create-user.input';
+import { UpdateUserInput } from './dto/update-user.input';
+import { PrismaService } from 'src/prisma/prisma.service';
+import * as argon2 from 'argon2';
+import { Role } from 'src/auth/enums';
+import { error } from 'console';
+
+@Injectable()
+export class UsersService {
+  constructor(private prisma: PrismaService) {}
+
+  async create(createUserInput: CreateUserInput) {
+    const { password, environment, ...userData } =
+      createUserInput;
+    const hash = await argon2.hash(password);
+
+    if (environment) {
+      const envExist =
+        await this.prisma.environment.findUnique({
+          where: {
+            id: environment,
+          },
+        });
+      if (!envExist) {
+        throw new NotFoundException(
+          `Environement with ID ${environment} not found`,
+        );
+      }
+    }
+    try {
+      const user = await this.prisma.user.create({
+        data: {
+          ...userData,
+          hash,
+          environmentId: environment || undefined,
+        },
+      });
+      return user;
+    } catch (error) {
+      if (error.code === 'P2002') {
+        throw new Error('Email already exists');
+      }
+      throw error;
+    }
+  }
+
+  async update(
+    updateUserInput: UpdateUserInput,
+    userId: number,
+  ) {
+    const { password, environment, ...restData } =
+      updateUserInput;
+
+    const dataToUpdate: any = { ...restData };
+    if (password) {
+      dataToUpdate.hash =
+        await argon2.hash(password);
+    }
+    if (environment) {
+      const envExist =
+        await this.prisma.environment.findUnique({
+          where: {
+            id: environment,
+          },
+        });
+
+      if (!envExist) {
+        throw new NotFoundException(
+          `Environement with ID ${environment} not found`,
+        );
+      }
+    }
+    try {
+      const user = await this.prisma.user.update({
+        where: { id: userId },
+        data: dataToUpdate,
+      });
+      return user;
+    } catch (error: any) {
+      if (error.code === 'P2002') {
+        throw new Error('Email already exists');
+      }
+      if (error.code === 'P2025') {
+        throw new NotFoundException(
+          `User with ID ${userId} not found`,
+        );
+      }
+      throw error;
+    }
+  }
+
+  async remove(userId: number) {
+    try {
+      return await this.prisma.user.delete({
+        where: { id: userId },
+      });
+    } catch (error: any) {
+      if (error.code === 'P2025') {
+        throw new NotFoundException(
+          `User with ID ${userId} not found`,
+        );
+      }
+      throw error;
+    }
+  }
+
+  async findOne(userId: number) {
+    const user =
+      await this.prisma.user.findUnique({
+        where: { id: userId },
+      });
+    return user;
+  }
+
+  async findAll(
+    role: Role,
+    environmentId?: number,
+  ) {
+    const whereClause: any = {};
+    if (role) {
+      whereClause.role = role;
+    }
+    if (environmentId) {
+      whereClause.environmentId = environmentId;
+    }
+    return this.prisma.user.findMany({
+      where: whereClause,
+    });
   }
 }
 </file>
