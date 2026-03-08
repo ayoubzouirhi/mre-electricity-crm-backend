@@ -21,8 +21,8 @@ export class EnvironmentsService {
     return `This action returns a #${id} environment`;
   }
 
-  update(id: number, updateEnvironmentInput: UpdateEnvironmentInput) {
-    return `This action updates a #${id} environment`;
+  update(updateEnvironmentInput: UpdateEnvironmentInput) {
+    return `This action updates a # environment`;
   }
 
   remove(id: number) {

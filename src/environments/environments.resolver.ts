@@ -55,7 +55,6 @@ export class EnvironmentsResolver {
     updateEnvironmentInput: UpdateEnvironmentInput,
   ) {
     return this.environmentsService.update(
-      updateEnvironmentInput.id,
       updateEnvironmentInput,
     );
   }

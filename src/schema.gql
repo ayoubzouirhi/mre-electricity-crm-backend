@@ -82,7 +82,6 @@ input CreateEnvironmentInput {
 }
 
 input UpdateEnvironmentInput {
-  name: String
+  name: String!
   description: String
-  id: Int!
 }

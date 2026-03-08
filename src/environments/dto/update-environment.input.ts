@@ -3,10 +3,10 @@ import { InputType, Field, Int, PartialType } from '@nestjs/graphql';
 
 @InputType()
 export class UpdateEnvironmentInput extends PartialType(CreateEnvironmentInput) {
-  @Field(() => Int)
+  @Field()
   name?: string; 
 
-  @Field()
-  description: 
+  @Field({nullable: true})
+  description?: string;
 
 }
