@@ -8,6 +8,6 @@ export const CurrentEnv = createParamDecorator(
   (data: unknown, context: ExecutionContext) => {
     const ctx =
       GqlExecutionContext.create(context);
-    return ctx.getContext().enviromentId;
+    return ctx.getContext().environmentId;
   },
 );

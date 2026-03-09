@@ -18,7 +18,7 @@ import { EnvironmentsModule } from './environments/environments.module';
         const envId = req.headers['x-environment-id'];
         return {
           req,
-          enviromentId: envId ? parseInt(envId as string, 10) : null,
+          environmentId: envId ? parseInt(envId as string, 10) : null,
         }
       }
     }),

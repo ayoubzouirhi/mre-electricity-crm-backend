@@ -27,7 +27,7 @@ export class UsersResolver {
   ) {}
 
   @UseGuards(RolesGuard)
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
   @Mutation(() => User)
   createUser(
     @Args('createUserInput')
@@ -57,7 +57,7 @@ export class UsersResolver {
   }
 
   @UseGuards(RolesGuard)
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN,  Role.SUPER_ADMIN)
   @Mutation(() => User, { name: 'removeUser' })
   removeUser(
     @Args('id', { type: () => Int })
@@ -67,7 +67,7 @@ export class UsersResolver {
   }
 
   @UseGuards(RolesGuard)
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
   @Query(() => User, { name: 'user' })
   findOne(
     @Args('id', { type: () => Int }) id: number,
@@ -76,7 +76,7 @@ export class UsersResolver {
   }
 
   @UseGuards(RolesGuard)
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
   @Query(() => [User], { name: 'users' })
   findAll(
     @Args('role', { nullable: true }) role?: Role,
