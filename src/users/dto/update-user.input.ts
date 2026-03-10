@@ -15,11 +15,11 @@ export class UpdateUserInput extends PartialType(
   @IsOptional()
   firstname?: string;
 
-  @IsOptional()
   @Field()
+  @IsOptional()
   lastname?: string;
 
   @IsOptional()
-  @Field()
+  @Field(() => Role, { nullable: true })
   role?: Role;
 }

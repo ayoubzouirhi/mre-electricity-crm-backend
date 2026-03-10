@@ -50,7 +50,7 @@ model Environment {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  name        String 
+  name        String
   description String?
 
   users User[]
@@ -73,7 +73,7 @@ model User {
   role          Role         @default(AGENT)
   environmentId Int?
   environment   Environment? @relation(fields: [environmentId], references: [id])
-  lead          Lead[]
+  tbdel         Lead[]
 
   @@map("users")
 }

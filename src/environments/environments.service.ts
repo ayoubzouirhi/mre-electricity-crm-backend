@@ -28,14 +28,12 @@ export class EnvironmentsService {
       await this.prisma.environment.findUnique({
         where: { id: environment },
       });
-    if (envExist) {
-      return envExist;
-    }
     if (!envExist) {
       throw new NotFoundException(
         `Environment with ID ${environment} not found`,
       );
     }
+    return envExist;
   }
 
   async update(
