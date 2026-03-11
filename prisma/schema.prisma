@@ -20,6 +20,24 @@ enum Role {
   AGENT
 }
 
+model LeadHistory {
+id Int @id @default(autoincrement())
+createdAt DateTime @default(now())
+
+action String
+oldValue String? 
+newValue String? 
+
+leadId Int 
+lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+userId Int? 
+user User? @relation(fields: [userId], references: [id])
+
+@@map("lead_histories")
+
+}
+
 model Lead {
   id        Int      @id @default(autoincrement())
   createdAt DateTime @default(now())
@@ -42,6 +60,7 @@ model Lead {
   agentId Int?
   agent   User? @relation(fields: [agentId], references: [id])
 
+  histories LeadHistory[]
   @@map("leads")
 }
 
@@ -75,5 +94,6 @@ model User {
   environment   Environment? @relation(fields: [environmentId], references: [id])
   tbdel         Lead[]
 
+  leadHistories LeadHistory[]
   @@map("users")
 }
