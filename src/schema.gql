@@ -58,6 +58,15 @@ type Lead {
   histories: [LeadHistory!]
 }
 
+type WorkflowStep {
+  id: Int!
+  name: String!
+  color: String
+  order: Int!
+  isFinal: Boolean!
+  environmentId: Int!
+}
+
 type Query {
   me: User!
   user(id: Int!): User!
@@ -66,6 +75,8 @@ type Query {
   environment(id: Int!): Environment!
   leads: [Lead!]!
   leadByEnv(leadId: Int!): Lead!
+  workflowSteps: [WorkflowStep!]!
+  workflowStep(id: Int!): WorkflowStep!
 }
 
 type Mutation {
@@ -80,6 +91,9 @@ type Mutation {
   createLead(createLeadInput: CreateLeadInput!): Lead!
   updateLead(updateLeadInput: UpdateLeadInput!, id: Int!): Lead!
   removeLead(id: Int!): Lead!
+  createWorkflowStep(createWorkflowStepInput: CreateWorkflowStepInput!): WorkflowStep!
+  updateWorkflowStep(updateWorkflowStepInput: UpdateWorkflowStepInput!, id: Int!): WorkflowStep!
+  removeWorkflowStep(id: Int!): WorkflowStep!
 }
 
 input CreateUserInput {
@@ -136,4 +150,19 @@ input UpdateLeadInput {
   status: String
   source: String
   agentId: Int
+}
+
+input CreateWorkflowStepInput {
+  name: String!
+  color: String
+  order: Int!
+  isFinal: Boolean!
+}
+
+input UpdateWorkflowStepInput {
+  name: String
+  color: String
+  order: Int
+  isFinal: Boolean
+  id: Int
 }

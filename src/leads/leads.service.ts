@@ -147,8 +147,10 @@ export class LeadsService {
         'Lead ID is required',
       );
     }
-    const existingLead = await this.prisma.lead.findUnique({
-      where: { id: leadId },})
+    const existingLead =
+      await this.prisma.lead.findUnique({
+        where: { id: leadId },
+      });
 
     const whereClause: any = { id: leadId };
 
@@ -176,17 +178,17 @@ export class LeadsService {
         histories: {
           create: {
             action: `Updated lead ${leadId}`,
-            oldValue: dataToUpdate.status ,
-            newValue: dataToUpdate.status ,
+            oldValue: dataToUpdate.status,
+            newValue: dataToUpdate.status,
             userId: user.id,
           },
         },
       },
       include: {
-        histories :{
+        histories: {
           orderBy: { createdAt: 'desc' },
-        }
-      }
+        },
+      },
     });
   }
 
