@@ -1,3 +1,4 @@
+import { LeadChecklistResponse } from './../../node_modules/.prisma/client/index.d';
 import {
   BadRequestException,
   ConflictException,
@@ -140,30 +141,80 @@ export class LeadsService {
     updateLeadInput: UpdateLeadInput,
     user: User,
     leadId: number,
+    envId: number,
   ) {
-    console.log(`LeadId:  ${leadId}`);
-    if (!leadId || leadId <= 0) {
-      throw new BadRequestException(
-        'Lead ID is required',
-      );
-    }
     const existingLead =
       await this.prisma.lead.findUnique({
-        where: { id: leadId },
+        where: {
+          id: leadId,
+          environmentId: envId,
+        },
       });
-
-    const whereClause: any = { id: leadId };
-
-    if (user.role === 'AGENT') {
-      whereClause.OR = [
-        { agentId: user.id },
-        { status: 'NEW', agentId: null },
-      ];
-    }
     if (!existingLead) {
       throw new BadRequestException(
         'Lead does not exist or you do not have permission to update it',
       );
+    }
+    if (user.role === 'AGENT') {
+      const isMyLead =
+        existingLead.agentId === user.id;
+      const isUnassignedLead =
+        existingLead.agentId === null;
+      if (!isMyLead && !isUnassignedLead) {
+        throw new BadRequestException(
+          'You do not have permission to update this lead',
+        );
+      }
+    }
+    if (
+      updateLeadInput.stepId &&
+      updateLeadInput.stepId !==
+        existingLead.stepId
+    ) {
+      const newStepId = updateLeadInput.stepId;
+      const requiredChecklist =
+        await this.prisma.checklistItem.findMany({
+          where: {
+            stepId: newStepId,
+            isRequired: true,
+          },
+        });
+      if (requiredChecklist.length > 0) {
+        const LeadResponses =
+          await this.prisma.leadChecklistResponse.findMany(
+            {
+              where: {
+                leadId: leadId,
+                isChecked: true,
+                checklistItemId: {
+                  in: requiredChecklist.map(
+                    (item) => item.id,
+                  ),
+                },
+              },
+            },
+          );
+        if (
+          LeadResponses.length <
+          requiredChecklist.length
+        ) {
+          const missingItems =
+            requiredChecklist.filter(
+              (reqItem) =>
+                !LeadResponses.some(
+                  (respItem) =>
+                    respItem.checklistItemId ===
+                    reqItem.id,
+                ),
+            );
+          const missinglabel = missingItems.map(
+            (item) => item.label,
+          );
+          throw new BadRequestException(
+            `Lead ${leadId} is missing required validated checklist items: ${missinglabel.join(', ')}`,
+          );
+        }
+      }
     }
     const { phone, agentId, ...agentSafeData } =
       updateLeadInput;
@@ -172,19 +223,24 @@ export class LeadsService {
         ? agentSafeData
         : updateLeadInput;
     return this.prisma.lead.update({
-      where: whereClause,
+      where: { id: leadId },
       data: {
         ...dataToUpdate,
         histories: {
           create: {
             action: `Updated lead ${leadId}`,
-            oldValue: dataToUpdate.status,
-            newValue: dataToUpdate.status,
+            oldValue: existingLead.stepId
+              ? `${existingLead.stepId}`
+              : 'null',
+            newValue: dataToUpdate.stepId
+              ? `${dataToUpdate.stepId}`
+              : 'null',
             userId: user.id,
           },
         },
       },
       include: {
+        leadChecklistResponses: true,
         histories: {
           orderBy: { createdAt: 'desc' },
         },
@@ -192,7 +248,21 @@ export class LeadsService {
     });
   }
 
-  async remove(leadId: number, user: User) {
+  async remove(leadId: number, envId: number) {
+    if (!envId) {
+      throw new BadRequestException(
+        'Environment ID is required',
+      );
+    }
+    const envExist =
+      await this.prisma.environment.findUnique({
+        where: { id: envId },
+      });
+    if (!envExist) {
+      throw new NotFoundException(
+        `Environment ID: ${envId} does not exist`,
+      );
+    }
     const lead = await this.prisma.lead.findFirst(
       {
         where: {
@@ -200,7 +270,6 @@ export class LeadsService {
         },
       },
     );
-
     if (!lead) {
       throw new NotFoundException(
         'Lead does not exist or you do not have permission to delete it',

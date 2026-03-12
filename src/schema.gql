@@ -45,16 +45,24 @@ A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date
 """
 scalar DateTime
 
+type LeadChecklistResponse {
+  id: Int!
+  isChecked: Boolean!
+  leadId: Int!
+  checklistItemId: Int!
+}
+
 type Lead {
   id: Int!
   firstName: String
   lastName: String
   email: String
   phone: String!
-  status: String!
+  stepId: Int
   source: String!
   environmentId: Int
   agentId: Int
+  leadChecklistResponses: [LeadChecklistResponse!]
   histories: [LeadHistory!]
 }
 
@@ -67,6 +75,13 @@ type WorkflowStep {
   environmentId: Int!
 }
 
+type ChecklistItem {
+  id: Int!
+  label: String!
+  isRequired: Boolean!
+  stepId: Int!
+}
+
 type Query {
   me: User!
   user(id: Int!): User!
@@ -77,6 +92,10 @@ type Query {
   leadByEnv(leadId: Int!): Lead!
   workflowSteps: [WorkflowStep!]!
   workflowStep(id: Int!): WorkflowStep!
+  checklistItems: [ChecklistItem!]!
+  checklistItem(id: Int!): ChecklistItem!
+  leadChecklistResponses(leadId: Int!): [LeadChecklistResponse!]!
+  leadChecklistResponse(id: Int!): LeadChecklistResponse!
 }
 
 type Mutation {
@@ -94,6 +113,11 @@ type Mutation {
   createWorkflowStep(createWorkflowStepInput: CreateWorkflowStepInput!): WorkflowStep!
   updateWorkflowStep(updateWorkflowStepInput: UpdateWorkflowStepInput!, id: Int!): WorkflowStep!
   removeWorkflowStep(id: Int!): WorkflowStep!
+  createChecklistItem(createChecklistItemInput: CreateChecklistItemInput!): ChecklistItem!
+  updateChecklistItem(updateChecklistItemInput: UpdateChecklistItemInput!): ChecklistItem!
+  removeChecklistItem(id: Int!): ChecklistItem!
+  toggleLeadCheckList(createLeadChecklistResponseInput: CreateLeadChecklistResponseInput!): LeadChecklistResponse!
+  removeLeadChecklistResponse(id: Int!): LeadChecklistResponse!
 }
 
 input CreateUserInput {
@@ -138,7 +162,7 @@ input CreateLeadInput {
   lastName: String!
   email: String
   phone: String!
-  status: String!
+  stepId: Float
   source: String!
 }
 
@@ -147,7 +171,7 @@ input UpdateLeadInput {
   lastName: String
   email: String
   phone: String
-  status: String
+  stepId: Float
   source: String
   agentId: Int
 }
@@ -165,4 +189,23 @@ input UpdateWorkflowStepInput {
   order: Int
   isFinal: Boolean
   id: Int
+}
+
+input CreateChecklistItemInput {
+  label: String!
+  isRequired: Boolean! = true
+  stepId: Int!
+}
+
+input UpdateChecklistItemInput {
+  label: String
+  isRequired: Boolean = true
+  stepId: Int
+  id: Int!
+}
+
+input CreateLeadChecklistResponseInput {
+  leadId: Int!
+  checklistItemId: Int!
+  isChecked: Boolean! = false
 }

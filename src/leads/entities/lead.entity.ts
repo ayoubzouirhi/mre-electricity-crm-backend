@@ -4,6 +4,7 @@ import {
   Int,
 } from '@nestjs/graphql';
 import { LeadHistory } from './lead-history';
+import { LeadChecklistResponse } from 'src/lead-checklist-responses/entities/lead-checklist-response.entity';
 
 @ObjectType()
 export class Lead {
@@ -22,8 +23,8 @@ export class Lead {
   @Field()
   phone: string;
 
-  @Field()
-  status: string;
+  @Field(() => Int, { nullable: true })
+  stepId?: number;
 
   @Field()
   source: string;
@@ -33,6 +34,9 @@ export class Lead {
 
   @Field(() => Int, { nullable: true })
   agentId?: number;
+
+  @Field(() => [LeadChecklistResponse], { nullable: true })
+  leadChecklistResponses?: LeadChecklistResponse[];
 
   @Field(() => [LeadHistory], { nullable: true })
   histories?: LeadHistory[];

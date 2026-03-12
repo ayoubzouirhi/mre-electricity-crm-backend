@@ -1,4 +1,7 @@
-import { IsInt, IsOptional } from 'class-validator';
+import {
+  IsInt,
+  IsOptional,
+} from 'class-validator';
 import { CreateLeadInput } from './create-lead.input';
 import {
   InputType,
@@ -11,7 +14,10 @@ import {
 export class UpdateLeadInput extends PartialType(
   CreateLeadInput,
 ) {
-  
+  @Field({ nullable: true })
+  @IsOptional()
+  stepId?: number;
+
   @Field(() => Int, { nullable: true })
   @IsOptional()
   @IsInt()

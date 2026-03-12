@@ -9,6 +9,8 @@ import { AuthModule } from './auth/auth.module';
 import { EnvironmentsModule } from './environments/environments.module';
 import { LeadsModule } from './leads/leads.module';
 import { WorkflowStepsModule } from './workflow-steps/workflow-steps.module';
+import { ChecklistItemsModule } from './checklist-items/checklist-items.module';
+import { LeadChecklistResponsesModule } from './lead-checklist-responses/lead-checklist-responses.module';
 
 @Module({
   imports: [
@@ -33,6 +35,8 @@ import { WorkflowStepsModule } from './workflow-steps/workflow-steps.module';
     EnvironmentsModule,
     LeadsModule,
     WorkflowStepsModule,
+    ChecklistItemsModule,
+    LeadChecklistResponsesModule,
   ],
 })
 export class AppModule {}

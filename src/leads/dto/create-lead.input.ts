@@ -28,10 +28,9 @@ export class CreateLeadInput {
   @IsNotEmpty()
   phone: string;
 
-  @Field()
-  @IsString()
-  @IsNotEmpty()
-  status: string;
+  @Field({ nullable: true })
+  @IsOptional()
+  stepId?: number;
 
   @Field()
   @IsString()

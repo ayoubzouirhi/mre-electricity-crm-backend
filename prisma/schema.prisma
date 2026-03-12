@@ -20,6 +20,60 @@ enum Role {
   AGENT
 }
 
+model ChecklistItem {
+  id         Int     @id @default(autoincrement())
+  label      String
+  isRequired Boolean @default(true)
+
+  stepId Int
+  step   WorkflowStep @relation(fields: [stepId], references: [id], onDelete: Cascade)
+
+  leadResponses LeadChecklistResponse[]
+
+  @@map("checklist_items")
+}
+
+model DocumentRequirement {
+  id         Int     @id @default(autoincrement())
+  label      String
+  isRequired Boolean @default(true)
+
+  stepId Int
+  step   WorkflowStep @relation(fields: [stepId], references: [id], onDelete: Cascade)
+
+  leadDocuments LeadDocument[]
+
+  @@map("document_requirements")
+}
+
+model LeadChecklistResponse {
+  id        Int     @id @default(autoincrement())
+  isChecked Boolean @default(false)
+
+  leadId Int
+  lead   Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  checklistItemId Int
+  checklistItem   ChecklistItem @relation(fields: [checklistItemId], references: [id], onDelete: Cascade)
+
+  @@unique([leadId, checklistItemId])
+  @@map("lead_checklist_responses")
+}
+
+model LeadDocument {
+  id       Int      @id @default(autoincrement())
+  fileUrl  String
+  uploadAt DateTime @default(now())
+
+  leadId Int
+  lead   Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  requirementId Int?
+  requirement   DocumentRequirement? @relation(fields: [requirementId], references: [id], onDelete: SetNull)
+
+  @@map("lead_documents")
+}
+
 model WorkflowStep {
   id      Int     @id @default(autoincrement())
   name    String
@@ -30,7 +84,9 @@ model WorkflowStep {
   environmentId Int
   environment   Environment @relation(fields: [environmentId], references: [id])
 
-  leads Lead[]
+  leads                Lead[]
+  checklistItems       ChecklistItem[]
+  documentRequirements DocumentRequirement[]
 
   @@unique([name, environmentId])
   @@map("workflow_steps")
@@ -77,7 +133,9 @@ model Lead {
   agentId Int?
   agent   User? @relation(fields: [agentId], references: [id])
 
-  histories LeadHistory[]
+  histories              LeadHistory[]
+  leadChecklistResponses LeadChecklistResponse[]
+  leadDocuments          LeadDocument[]
 
   @@map("leads")
 }
@@ -111,7 +169,7 @@ model User {
   role          Role         @default(AGENT)
   environmentId Int?
   environment   Environment? @relation(fields: [environmentId], references: [id])
-  tbdel         Lead[]
+  lead          Lead[]
 
   leadHistories LeadHistory[]
 

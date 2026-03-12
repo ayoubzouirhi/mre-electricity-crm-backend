@@ -70,8 +70,8 @@ export class LeadsResolver {
     @Args('leadId', { type: () => Int })
     leadId: number,
     @GetUser()
-    user: User,
     @CurrentEnv() envId: number,
+    user: User,
   ) {
     return this.leadsService.findOne(
       user,
@@ -93,12 +93,14 @@ export class LeadsResolver {
     updateLeadInput: UpdateLeadInput,
     @Args('id', { type: () => Int }, ParseIntPipe)
     leadId: number,
+    @CurrentEnv() envId: number,
     @GetUser() user?: User,
   ) {
     return this.leadsService.update(
       updateLeadInput,
       user,
       leadId,
+      envId,
     );
   }
 
@@ -107,8 +109,8 @@ export class LeadsResolver {
   removeLead(
     @Args('id', { type: () => Int }, ParseIntPipe)
     id: number,
-    @GetUser() user: User,
+    @CurrentEnv() envId: number,
   ) {
-    return this.leadsService.remove(id, user);
+    return this.leadsService.remove(id, envId);
   }
 }
