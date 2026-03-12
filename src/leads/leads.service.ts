@@ -147,18 +147,20 @@ export class LeadsService {
         'Lead ID is required',
       );
     }
+    const existingLead =
+      await this.prisma.lead.findUnique({
+        where: { id: leadId },
+      });
+
     const whereClause: any = { id: leadId };
+
     if (user.role === 'AGENT') {
       whereClause.OR = [
         { agentId: user.id },
         { status: 'NEW', agentId: null },
       ];
     }
-    const leadExist =
-      await this.prisma.lead.findFirst({
-        where: whereClause,
-      });
-    if (!leadExist) {
+    if (!existingLead) {
       throw new BadRequestException(
         'Lead does not exist or you do not have permission to update it',
       );
@@ -171,7 +173,22 @@ export class LeadsService {
         : updateLeadInput;
     return this.prisma.lead.update({
       where: whereClause,
-      data: dataToUpdate,
+      data: {
+        ...dataToUpdate,
+        histories: {
+          create: {
+            action: `Updated lead ${leadId}`,
+            oldValue: dataToUpdate.status,
+            newValue: dataToUpdate.status,
+            userId: user.id,
+          },
+        },
+      },
+      include: {
+        histories: {
+          orderBy: { createdAt: 'desc' },
+        },
+      },
     });
   }
 

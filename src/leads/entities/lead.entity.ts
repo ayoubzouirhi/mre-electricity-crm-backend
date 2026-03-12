@@ -3,6 +3,7 @@ import {
   Field,
   Int,
 } from '@nestjs/graphql';
+import { LeadHistory } from './lead-history';
 
 @ObjectType()
 export class Lead {
@@ -32,4 +33,7 @@ export class Lead {
 
   @Field(() => Int, { nullable: true })
   agentId?: number;
+
+  @Field(() => [LeadHistory], { nullable: true })
+  histories?: LeadHistory[];
 }

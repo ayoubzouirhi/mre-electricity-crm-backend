@@ -8,6 +8,7 @@ import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
 import { EnvironmentsModule } from './environments/environments.module';
 import { LeadsModule } from './leads/leads.module';
+import { WorkflowStepsModule } from './workflow-steps/workflow-steps.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { LeadsModule } from './leads/leads.module';
     AuthModule,
     EnvironmentsModule,
     LeadsModule,
+    WorkflowStepsModule,
   ],
 })
 export class AppModule {}

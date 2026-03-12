@@ -20,6 +20,39 @@ enum Role {
   AGENT
 }
 
+model WorkflowStep {
+  id      Int     @id @default(autoincrement())
+  name    String
+  color   String?
+  order   Int
+  isFinal Boolean @default(false)
+
+  environmentId Int
+  environment   Environment @relation(fields: [environmentId], references: [id])
+
+  leads Lead[]
+
+  @@unique([name, environmentId])
+  @@map("workflow_steps")
+}
+
+model LeadHistory {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+
+  action   String
+  oldValue String?
+  newValue String?
+
+  leadId Int
+  lead   Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  userId Int?
+  user   User? @relation(fields: [userId], references: [id])
+
+  @@map("lead_histories")
+}
+
 model Lead {
   id        Int      @id @default(autoincrement())
   createdAt DateTime @default(now())
@@ -30,8 +63,10 @@ model Lead {
   email     String?
   phone     String
 
-  status String @default("NEW")
   source String
+
+  stepId Int?
+  step   WorkflowStep? @relation(fields: [stepId], references: [id])
 
   lastCallRecordUrl String? @db.Text
   aiSummary         String? @db.Text
@@ -41,6 +76,8 @@ model Lead {
 
   agentId Int?
   agent   User? @relation(fields: [agentId], references: [id])
+
+  histories LeadHistory[]
 
   @@map("leads")
 }
@@ -53,8 +90,9 @@ model Environment {
   name        String
   description String?
 
-  users User[]
-  leads Lead[]
+  users         User[]
+  leads         Lead[]
+  workflowSteps WorkflowStep[]
 
   @@map("environments")
 }
@@ -74,6 +112,8 @@ model User {
   environmentId Int?
   environment   Environment? @relation(fields: [environmentId], references: [id])
   tbdel         Lead[]
+
+  leadHistories LeadHistory[]
 
   @@map("users")
 }
