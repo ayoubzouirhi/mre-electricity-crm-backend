@@ -11,6 +11,7 @@ import { LeadsModule } from './leads/leads.module';
 import { WorkflowStepsModule } from './workflow-steps/workflow-steps.module';
 import { ChecklistItemsModule } from './checklist-items/checklist-items.module';
 import { LeadChecklistResponsesModule } from './lead-checklist-responses/lead-checklist-responses.module';
+import { TicketsModule } from './tickets/tickets.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { LeadChecklistResponsesModule } from './lead-checklist-responses/lead-ch
     WorkflowStepsModule,
     ChecklistItemsModule,
     LeadChecklistResponsesModule,
+    TicketsModule,
   ],
 })
 export class AppModule {}

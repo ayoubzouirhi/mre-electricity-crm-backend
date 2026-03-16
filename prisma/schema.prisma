@@ -20,6 +20,39 @@ enum Role {
   AGENT
 }
 
+enum Priority {
+  P1
+  P2
+  P3
+  P4
+}
+
+model Ticket {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  title       String
+  description String?
+  status      String    @default("OPEN")
+  priority    Priority  @default(P3)
+  dueDate     DateTime?
+
+  environmentId Int
+  environment   Environment @relation(fields: [environmentId], references: [id])
+
+  ladId Int?
+  lead  Lead? @relation(fields: [ladId], references: [id], onDelete: Cascade)
+
+  assigneeId Int?
+  assignee   User? @relation("TicketAssignee", fields: [assigneeId], references: [id])
+
+  creatorId Int
+  creator   User @relation("TicketCreator", fields: [creatorId], references: [id])
+
+  @@map("tickets")
+}
+
 model ChecklistItem {
   id         Int     @id @default(autoincrement())
   label      String
@@ -136,6 +169,7 @@ model Lead {
   histories              LeadHistory[]
   leadChecklistResponses LeadChecklistResponse[]
   leadDocuments          LeadDocument[]
+  tickets                Ticket[]
 
   @@map("leads")
 }
@@ -151,7 +185,7 @@ model Environment {
   users         User[]
   leads         Lead[]
   workflowSteps WorkflowStep[]
-
+  tickets       Ticket[]
   @@map("environments")
 }
 
@@ -171,7 +205,10 @@ model User {
   environment   Environment? @relation(fields: [environmentId], references: [id])
   lead          Lead[]
 
-  leadHistories LeadHistory[]
+  leadHistories LeadHistory[] 
+  assignedTickets       Ticket[] @relation("TicketAssignee")
+  createdTickets       Ticket[] @relation("TicketCreator")
+  
 
   @@map("users")
 }
