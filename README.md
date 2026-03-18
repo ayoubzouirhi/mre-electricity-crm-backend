@@ -28,6 +28,10 @@ OmniCRM is not just a CRUD application — it is a **backend engine** designed t
 
 ---
 
+> **Note on Development History:** The core foundational architecture (Auth, RBAC, Multi-tenancy) was prototyped and tested in a separate local environment before being consolidated into this repository. Subsequent feature developments (e.g., the Leads module) follow standard iterative commit history.
+
+---
+
 ## 🏗 Architecture & Advanced Features
 
 This project demonstrates production-ready architectural patterns across four key pillars:
