@@ -27,7 +27,7 @@ export class JwtStrategy extends PassportStrategy(
         config.get<string>('JWT_SECRET'),
     });
   }
-
+  
   async validate(payload: {
     sub: number;
     email: string;

@@ -18,4 +18,6 @@ export class UpdateUserInput extends PartialType(
   @Field()
   @IsOptional()
   lastname?: string;
+
+
 }

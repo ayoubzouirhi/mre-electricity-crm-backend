@@ -41,8 +41,8 @@ model Ticket {
   environmentId Int
   environment   Environment @relation(fields: [environmentId], references: [id])
 
-  ladId Int?
-  lead  Lead? @relation(fields: [ladId], references: [id], onDelete: Cascade)
+  leadId Int?
+  lead  Lead? @relation(fields: [leadId], references: [id], onDelete: Cascade)
 
   assigneeId Int?
   assignee   User? @relation("TicketAssignee", fields: [assigneeId], references: [id])

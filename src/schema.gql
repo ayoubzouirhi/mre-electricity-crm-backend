@@ -82,6 +82,19 @@ type ChecklistItem {
   stepId: Int!
 }
 
+type Ticket {
+  id: Int
+  title: String
+  description: String
+  status: String!
+  priority: String
+  dueDate: DateTime
+  environmentId: Float
+  leadId: Float
+  assigneeId: Float
+  creatorId: Int
+}
+
 type Query {
   me: User!
   user(id: Int!): User!
@@ -96,6 +109,8 @@ type Query {
   checklistItem(id: Int!): ChecklistItem!
   leadChecklistResponses(leadId: Int!): [LeadChecklistResponse!]!
   leadChecklistResponse(id: Int!): LeadChecklistResponse!
+  tickets: [Ticket!]!
+  ticket(id: Int!): Ticket!
 }
 
 type Mutation {
@@ -118,6 +133,9 @@ type Mutation {
   removeChecklistItem(id: Int!): ChecklistItem!
   toggleLeadCheckListResponses(createLeadChecklistResponseInput: CreateLeadChecklistResponseInput!): LeadChecklistResponse!
   removeLeadChecklistResponse(id: Int!): LeadChecklistResponse!
+  createTicket(createTicketInput: CreateTicketInput!): Ticket!
+  updateTicket(updateTicketInput: UpdateTicketInput!, id: Int!): Ticket!
+  removeTicket(id: Int!): Ticket!
 }
 
 input CreateUserInput {
@@ -208,4 +226,32 @@ input CreateLeadChecklistResponseInput {
   leadId: Int!
   checklistItemId: Int!
   isChecked: Boolean! = false
+}
+
+input CreateTicketInput {
+  title: String!
+  description: String
+  status: String! = "OPEN"
+  priority: Priority! = P3
+  dueDate: DateTime
+  leadId: Int
+  assigneeId: Int
+}
+
+"""The ticket priority levels"""
+enum Priority {
+  P1
+  P2
+  P3
+  P4
+}
+
+input UpdateTicketInput {
+  title: String
+  description: String
+  status: String = "OPEN"
+  priority: Priority = P3
+  dueDate: DateTime
+  leadId: Int
+  assigneeId: Int
 }
