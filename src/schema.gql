@@ -77,7 +77,7 @@ input CreateUserInput {
 input UpdateUserInput {
   email: String
   password: String
-  role: String!
+  role: Role
   environment: Int
   firstname: String
   lastname: String!

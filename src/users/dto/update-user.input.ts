@@ -18,8 +18,4 @@ export class UpdateUserInput extends PartialType(
   @Field()
   @IsOptional()
   lastname?: string;
-
-  @IsOptional()
-  @Field(() => Role, { nullable: true })
-  role?: Role;
 }
