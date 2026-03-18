@@ -1,10 +1,16 @@
-import { InputType, Int, Field } from '@nestjs/graphql';
+import {
+  InputType,
+  Int,
+  Field,
+} from '@nestjs/graphql';
 import { Priority } from '@prisma/client';
-import { IsNotEmpty, IsOptional } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsOptional,
+} from 'class-validator';
 
 @InputType()
 export class CreateTicketInput {
-
   @Field()
   @IsNotEmpty()
   title: string;
@@ -13,13 +19,15 @@ export class CreateTicketInput {
   @IsOptional()
   description?: string;
 
-  @Field({ defaultValue: "OPEN" })
+  @Field({ defaultValue: 'OPEN' })
   @IsNotEmpty()
   status: string;
 
-  @Field(() => Priority, { defaultValue: Priority.P3 })
+  @Field(() => Priority, {
+    defaultValue: Priority.P3,
+  })
   @IsNotEmpty()
-  priority?: Priority;
+  priority: Priority;
 
   @Field(() => Date, { nullable: true })
   @IsOptional()

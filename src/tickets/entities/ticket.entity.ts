@@ -1,37 +1,39 @@
 import { Environment } from './../../environments/entities/environment.entity';
-import { ObjectType, Field, Int } from '@nestjs/graphql';
+import {
+  ObjectType,
+  Field,
+  Int,
+} from '@nestjs/graphql';
 
 @ObjectType()
 export class Ticket {
-  @Field()
-    title: string;
-  
-    @Field()
-    id: number;
+  @Field(() => Int, { nullable: true })
+  id?: number;
 
-    @Field()
-    description?: string;
-  
-    @Field({ defaultValue: "OPEN" })
-    status?: string;
-  
-    @Field()
-    priority?: string;
-  
-    @Field(() => Date, { nullable: true })
-    dueDate?: Date;
-  
-    @Field()
-    environmentId?: Environment;
+  @Field({ nullable: true })
+  title?: string;
 
-    @Field()
-    leadId?: number;
-  
-    @Field()
-    assigneeId?: number;
+  @Field({ nullable: true })
+  description?: string;
 
-    @Field()
-    creatorId?: number;
-  }
-  
+  @Field({ defaultValue: 'OPEN' })
+  status?: string;
 
+  @Field({ nullable: true })
+  priority?: string;
+
+  @Field(() => Date, { nullable: true })
+  dueDate?: Date;
+
+  @Field({ nullable: true })
+  environmentId?: number;
+
+  @Field({ nullable: true })
+  leadId?: number;
+
+  @Field({ nullable: true })
+  assigneeId?: number;
+
+  @Field(() => Int, { nullable: true })
+  creatorId?: number;
+}

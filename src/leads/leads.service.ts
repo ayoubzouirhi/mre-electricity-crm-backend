@@ -8,7 +8,7 @@ import { CreateLeadInput } from './dto/create-lead.input';
 import { UpdateLeadInput } from './dto/update-lead.input';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { User } from 'src/users/entities/user.entity';
-import { Prisma } from '@prisma/client';
+import { Prisma, Role } from '@prisma/client';
 
 @Injectable()
 export class LeadsService {
@@ -195,7 +195,7 @@ export class LeadsService {
         updateLeadInput.stepId,
       );
     }
-    if (user.role === 'AGENT') {
+    if (user.role === Role.AGENT) {
       const isMyLead =
         existingLead.agentId === user.id;
       const isUnassignedLead =

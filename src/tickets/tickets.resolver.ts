@@ -9,13 +9,10 @@ import { TicketsService } from './tickets.service';
 import { Ticket } from './entities/ticket.entity';
 import { CreateTicketInput } from './dto/create-ticket.input';
 import { UpdateTicketInput } from './dto/update-ticket.input';
-import { UseGuards } from '@nestjs/common';
+import { Get, UseGuards } from '@nestjs/common';
 import { GqlAuthGuard } from 'src/auth/guard/gql-auth.guard';
 import { RolesGuard } from 'src/auth/guard/roles.guard';
-import {
-  Environment,
-  Role,
-} from '@prisma/client';
+import { Role, User } from '@prisma/client';
 import {
   CurrentEnv,
   GetUser,
@@ -23,11 +20,7 @@ import {
 } from 'src/auth/decorator';
 
 @UseGuards(GqlAuthGuard, RolesGuard)
-@Roles(
-  Role.SUPER_ADMIN,
-  Role.ADMIN,
-  Role.RESPONSABLE,
-)
+@Roles(Role.ADMIN, Role.RESPONSABLE, Role.AGENT)
 @Resolver(() => Ticket)
 export class TicketsResolver {
   constructor(
@@ -48,33 +41,61 @@ export class TicketsResolver {
     );
   }
 
+  @Roles(Role.ADMIN, Role.RESPONSABLE, Role.AGENT)
   @Query(() => [Ticket], { name: 'tickets' })
-  findAll() {
-    return this.ticketsService.findAll();
+  findAll(
+    @CurrentEnv() envId: number,
+    @GetUser() user: User,
+  ) {
+    return this.ticketsService.findAll(
+      envId,
+      user,
+    );
   }
 
+  @Roles(Role.ADMIN, Role.RESPONSABLE, Role.AGENT)
   @Query(() => Ticket, { name: 'ticket' })
   findOne(
-    @Args('id', { type: () => Int }) id: number,
+    @Args('id', { type: () => Int })
+    ticketId: number,
+    @CurrentEnv() envId: number,
+    @GetUser() user: User,
   ) {
-    return this.ticketsService.findOne(id);
+    return this.ticketsService.findOne(
+      ticketId,
+      envId,
+      user,
+    );
   }
 
+  @Roles(Role.ADMIN, Role.RESPONSABLE, Role.AGENT)
   @Mutation(() => Ticket)
   updateTicket(
     @Args('updateTicketInput')
     updateTicketInput: UpdateTicketInput,
+    @Args('id', { type: () => Int })
+    ticketId: number,
+    @CurrentEnv() envId: number,
+    @GetUser() user: User,
   ) {
     return this.ticketsService.update(
-      updateTicketInput.id,
+      ticketId,
       updateTicketInput,
+      envId,
+      user,
     );
   }
 
+  @Roles(Role.ADMIN, Role.RESPONSABLE)
   @Mutation(() => Ticket)
   removeTicket(
-    @Args('id', { type: () => Int }) id: number,
+    @Args('id', { type: () => Int })
+    ticketId: number,
+    @CurrentEnv() envId: number,
   ) {
-    return this.ticketsService.remove(id);
+    return this.ticketsService.remove(
+      ticketId,
+      envId,
+    );
   }
 }
