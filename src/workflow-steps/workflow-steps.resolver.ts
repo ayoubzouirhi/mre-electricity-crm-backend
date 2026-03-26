@@ -1,10 +1,4 @@
-import {
-  Resolver,
-  Query,
-  Mutation,
-  Args,
-  Int,
-} from '@nestjs/graphql';
+import { Resolver, Query, Mutation, Args, Int } from '@nestjs/graphql';
 import { WorkflowStepsService } from './workflow-steps.service';
 import { WorkflowStep } from './entities/workflow-step.entity';
 import { CreateWorkflowStepInput } from './dto/create-workflow-step.input';
@@ -12,19 +6,14 @@ import { UpdateWorkflowStepInput } from './dto/update-workflow-step.input';
 import { GqlAuthGuard } from 'src/auth/guard/gql-auth.guard';
 import { RolesGuard } from 'src/auth/guard/roles.guard';
 import { UseGuards } from '@nestjs/common';
-import {
-  CurrentEnv,
-  Roles,
-} from 'src/auth/decorator';
+import { CurrentEnv, Roles } from 'src/common/decorator';
 import { Role } from '@prisma/client';
 
 @UseGuards(GqlAuthGuard, RolesGuard)
 @Roles(Role.SUPER_ADMIN, Role.ADMIN)
 @Resolver(() => WorkflowStep)
 export class WorkflowStepsResolver {
-  constructor(
-    private readonly workflowStepsService: WorkflowStepsService,
-  ) {}
+  constructor(private readonly workflowStepsService: WorkflowStepsService) {}
 
   @Mutation(() => WorkflowStep)
   createWorkflowStep(
@@ -32,19 +21,14 @@ export class WorkflowStepsResolver {
     createWorkflowStepInput: CreateWorkflowStepInput,
     @CurrentEnv() envId: number,
   ) {
-    return this.workflowStepsService.create(
-      createWorkflowStepInput,
-      envId,
-    );
+    return this.workflowStepsService.create(createWorkflowStepInput, envId);
   }
 
   @Query(() => [WorkflowStep], {
     name: 'workflowSteps',
   })
   findAll(@CurrentEnv() envId: number) {
-    return this.workflowStepsService.findAll(
-      envId,
-    );
+    return this.workflowStepsService.findAll(envId);
   }
 
   @Query(() => WorkflowStep, {
@@ -55,10 +39,7 @@ export class WorkflowStepsResolver {
     stepId: number,
     @CurrentEnv() envId?: number,
   ) {
-    return this.workflowStepsService.findOne(
-      stepId,
-      envId,
-    );
+    return this.workflowStepsService.findOne(stepId, envId);
   }
 
   @Mutation(() => WorkflowStep)
@@ -69,11 +50,7 @@ export class WorkflowStepsResolver {
     stepId: number,
     @CurrentEnv() envId?: number,
   ) {
-    return this.workflowStepsService.update(
-      updateWorkflowStepInput,
-      stepId,
-      envId,
-    );
+    return this.workflowStepsService.update(updateWorkflowStepInput, stepId, envId);
   }
 
   @Mutation(() => WorkflowStep)
@@ -82,9 +59,6 @@ export class WorkflowStepsResolver {
     removeStep: number,
     @CurrentEnv() envId?: number,
   ) {
-    return this.workflowStepsService.remove(
-      removeStep,
-      envId,
-    );
+    return this.workflowStepsService.remove(removeStep, envId);
   }
 }

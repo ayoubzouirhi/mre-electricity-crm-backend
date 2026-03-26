@@ -1,10 +1,4 @@
-import {
-  Resolver,
-  Query,
-  Mutation,
-  Args,
-  Int,
-} from '@nestjs/graphql';
+import { Resolver, Query, Mutation, Args, Int } from '@nestjs/graphql';
 import { EnvironmentsService } from './environments.service';
 import { Environment } from './entities/environment.entity';
 import { CreateEnvironmentInput } from './dto/create-environment.input';
@@ -13,24 +7,20 @@ import { UseGuards } from '@nestjs/common';
 import { GqlAuthGuard } from 'src/auth/guard/gql-auth.guard';
 import { Role } from '@prisma/client';
 import { RolesGuard } from 'src/auth/guard/roles.guard';
-import { Roles } from 'src/auth/decorator';
+import { Roles } from 'src/common/decorator';
 
 @UseGuards(GqlAuthGuard, RolesGuard)
 @Roles(Role.SUPER_ADMIN)
 @Resolver(() => Environment)
 export class EnvironmentsResolver {
-  constructor(
-    private environmentsService: EnvironmentsService,
-  ) {}
+  constructor(private environmentsService: EnvironmentsService) {}
 
   @Mutation(() => Environment)
   createEnvironment(
     @Args('createEnvironmentInput')
     createEnvironmentInput: CreateEnvironmentInput,
   ) {
-    return this.environmentsService.create(
-      createEnvironmentInput,
-    );
+    return this.environmentsService.create(createEnvironmentInput);
   }
 
   @Query(() => [Environment], {
@@ -43,9 +33,7 @@ export class EnvironmentsResolver {
   @Query(() => Environment, {
     name: 'environment',
   })
-  findOne(
-    @Args('id', { type: () => Int }) id: number,
-  ) {
+  findOne(@Args('id', { type: () => Int }) id: number) {
     return this.environmentsService.findOne(id);
   }
 
@@ -54,15 +42,11 @@ export class EnvironmentsResolver {
     @Args('updateEnvironmentInput')
     updateEnvironmentInput: UpdateEnvironmentInput,
   ) {
-    return this.environmentsService.update(
-      updateEnvironmentInput,
-    );
+    return this.environmentsService.update(updateEnvironmentInput);
   }
 
   @Mutation(() => Environment)
-  removeEnvironment(
-    @Args('id', { type: () => Int }) id: number,
-  ) {
+  removeEnvironment(@Args('id', { type: () => Int }) id: number) {
     return this.environmentsService.remove(id);
   }
 }

@@ -39,5 +39,5 @@ export class CreateUserInput {
   @IsInt()
   @IsOptional()
   @Field(() => Int, { nullable: true })
-  environment?: number;
+  environmentId?: number;
 }

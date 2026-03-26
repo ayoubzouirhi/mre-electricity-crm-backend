@@ -1,4 +1,5 @@
 import {
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -7,7 +8,7 @@ import { UpdateUserInput } from './dto/update-user.input';
 import { PrismaService } from 'src/prisma/prisma.service';
 import * as argon2 from 'argon2';
 import { Role } from 'src/auth/enums';
-import { Prisma } from '@prisma/client';
+import { Prisma, User } from '@prisma/client';
 
 const userSelect = {
   id: true,
@@ -24,29 +25,37 @@ const userSelect = {
 export class UsersService {
   constructor(private prisma: PrismaService) {}
 
-  async create(createUserInput: CreateUserInput) {
-    const { password, environment, ...userData } =
-      createUserInput;
-    const hash = await argon2.hash(password);
-
-    if (environment) {
-      const envExist =
-        await this.prisma.environment.findUnique({
-          where: {
-            id: environment,
-          },
-        });
-      if (!envExist) {
-        throw new NotFoundException(
-          `Environement with ID ${environment} not found`,
+  async create(
+    createUserInput: CreateUserInput,
+    superUser: User,
+  ) {
+    const {
+      password,
+      environmentId,
+      ...userData
+    } = createUserInput;
+    let finalEnvironmentId: number;
+    if (superUser.role === Role.ADMIN) {
+      finalEnvironmentId =
+        superUser.environmentId;
+      if (
+        createUserInput.role === superUser.role
+      ) {
+        throw new ForbiddenException(
+          'Access denied',
         );
       }
+    } else {
+      finalEnvironmentId =
+        environmentId || undefined;
     }
+    const hash = await argon2.hash(password);
     const user = await this.prisma.user.create({
       data: {
         ...userData,
         hash,
-        environmentId: environment || undefined,
+        environmentId:
+          finalEnvironmentId || undefined,
       },
       select: userSelect,
     });
@@ -55,32 +64,41 @@ export class UsersService {
 
   async update(
     updateUserInput: UpdateUserInput,
-    userId: number,
+    targetUserId: number,
+    superUser: User,
   ) {
-    const { password, environment, ...restData } =
-      updateUserInput;
-
-    const dataToUpdate: Prisma.UserUpdateInput = { ...restData };
+    const {
+      password,
+      environmentId,
+      ...restData
+    } = updateUserInput;
+    const dataToUpdate: Prisma.UserUpdateInput = {
+      ...restData,
+    };
     if (password) {
       dataToUpdate.hash =
         await argon2.hash(password);
     }
-    if (environment) {
-      const envExist =
-        await this.prisma.environment.findUnique({
-          where: {
-            id: environment,
-          },
-        });
-
-      if (!envExist) {
-        throw new NotFoundException(
-          `Environement with ID ${environment} not found`,
+    const notSuperUser =
+      await this.prisma.user.findUnique({
+        where: {
+          id: targetUserId,
+        },
+      });
+    if (superUser.role === Role.ADMIN) {
+      if (
+        updateUserInput.role ===
+          (superUser.role || Role.SUPER_ADMIN) ||
+        notSuperUser?.role === Role.ADMIN ||
+        notSuperUser?.role === Role.SUPER_ADMIN
+      ) {
+        throw new ForbiddenException(
+          'Access denied',
         );
       }
     }
     const user = await this.prisma.user.update({
-      where: { id: userId },
+      where: { id: targetUserId },
       data: dataToUpdate,
       select: userSelect,
     });
@@ -107,7 +125,7 @@ export class UsersService {
     role: Role,
     environmentId?: number,
   ) {
-    const whereClause: any = {};
+    const whereClause: Prisma.UserWhereInput = {};
     if (role) {
       whereClause.role = role;
     }

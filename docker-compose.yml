@@ -1,17 +1,31 @@
 version: '3.8'
 services:
   dev-db:
-    image: mysql:latest
-    container_name: mre-mysql
+    image: postgres:13
+    container_name: mre-postgres-dev
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword-mre
-      MYSQL_DATABASE: mre_db
-      MYSQL_USER: mre_user
-      MYSQL_PASSWORD: mre_password
+      POSTGRES_USER: mre_user
+      POSTGRES_PASSWORD: 123
+      POSTGRES_DB: mre_electricity_crm
     ports:
-      - "3307:3306"
+      - "5434:5432"
     volumes:
-      - mysql-data:/var/lib/mysql
+      - postgres-data:/var/lib/postgresql/data
     
+
+
+  test-db:
+    image: postgres:13
+    container_name: mre-postgres-test
+    environment:
+      POSTGRES_USER: mre_test_user
+      POSTGRES_PASSWORD: mre_test_password
+      POSTGRES_DB: mre_electricity_crm_test
+    ports:
+      - "5435:5432"
+    volumes:
+    - pg-test-data:/var/lib/postgresql/data
+
 volumes:
-  mysql-data:
+  pg-test-data:
+  postgres-data:

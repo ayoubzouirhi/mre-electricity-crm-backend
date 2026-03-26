@@ -101,7 +101,7 @@ type Query {
   users(role: String): [User!]!
   environments: [Environment!]!
   environment(id: Int!): Environment!
-  leads: [Lead!]!
+  leads(take: Int! = 10, skip: Int! = 0): [Lead!]!
   leadByEnv(leadId: Int!): Lead!
   workflowSteps: [WorkflowStep!]!
   workflowStep(id: Int!): WorkflowStep!
@@ -109,13 +109,13 @@ type Query {
   checklistItem(id: Int!): ChecklistItem!
   leadChecklistResponses(leadId: Int!): [LeadChecklistResponse!]!
   leadChecklistResponse(id: Int!): LeadChecklistResponse!
-  tickets: [Ticket!]!
+  tickets(take: Int! = 10, skip: Int! = 0): [Ticket!]!
   ticket(id: Int!): Ticket!
 }
 
 type Mutation {
   createUser(createUserInput: CreateUserInput!): User!
-  updateUser(updateUserInput: UpdateUserInput!): User!
+  updateUser(id: Int!, updateUserInput: UpdateUserInput!): User!
   removeUser(id: Int!): User!
   signup(signupInput: SignupInput!): AuthResponse!
   signin(signinInput: SigninInput!): AuthResponse!
@@ -142,16 +142,16 @@ input CreateUserInput {
   email: String!
   password: String!
   role: Role
-  environment: Int
+  environmentId: Int
 }
 
 input UpdateUserInput {
   email: String
   password: String
   role: Role
-  environment: Int
+  environmentId: Int
   firstname: String
-  lastname: String!
+  lastname: String
 }
 
 input SignupInput {
