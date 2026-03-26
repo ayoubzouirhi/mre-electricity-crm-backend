@@ -1,64 +1,51 @@
-import {
-  Resolver,
-  Query,
-  Mutation,
-  Args,
-  Int,
-} from '@nestjs/graphql';
+import { Resolver, Query, Mutation, Args, Int } from '@nestjs/graphql';
 import { UsersService } from './users.service';
-import { User } from './entities/user.entity';
+import { User as GqlUser } from './entities/user.entity';
+import { User as PrismaUser } from '@prisma/client';
 import { CreateUserInput } from './dto/create-user.input';
 import { UpdateUserInput } from './dto/update-user.input';
-import { Get, UseGuards } from '@nestjs/common';
+import { UseGuards } from '@nestjs/common';
 import { GqlAuthGuard } from 'src/auth/guard/gql-auth.guard';
-import {
-  CurrentEnv,
-  GetUser,
-} from 'src/auth/decorator';
-import { Roles } from 'src/auth/decorator/roles.decorators';
-import { Role } from 'src/auth/enums';
+import { CurrentEnv, GetUser } from 'src/common/decorator';
+import { Roles } from 'src/common/decorator/roles.decorators';
 import { RolesGuard } from 'src/auth/guard/roles.guard';
+import { Role } from '@prisma/client';
 
-@UseGuards(GqlAuthGuard)
-@Resolver(() => User)
+@UseGuards(GqlAuthGuard, RolesGuard)
+@Resolver(() => GqlUser)
 export class UsersResolver {
-  constructor(
-    private readonly usersService: UsersService,
-  ) {}
+  constructor(private readonly usersService: UsersService) {}
 
-  @UseGuards(RolesGuard)
-  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
-  @Mutation(() => User)
+  @Roles(Role.SUPER_ADMIN, Role.ADMIN)
+  @Mutation(() => GqlUser)
   createUser(
     @Args('createUserInput')
     createUserInput: CreateUserInput,
+    @GetUser() superUser: PrismaUser,
   ) {
-    return this.usersService.create(
-      createUserInput,
-    );
+    return this.usersService.create(createUserInput, superUser);
   }
 
-  @Query(() => User, { name: 'me' })
-  getMe(@GetUser() user: User) {
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @Query(() => GqlUser, { name: 'me' })
+  getMe(@GetUser() user: PrismaUser) {
     return user;
   }
 
-  @UseGuards(RolesGuard)
-  @Mutation(() => User, { name: 'updateUser' })
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @Mutation(() => GqlUser, { name: 'updateUser' })
   updateUser(
+    @Args('id', { type: () => Int })
+    targetUserId: number,
     @Args('updateUserInput')
     updateUserInput: UpdateUserInput,
-    @GetUser('id') user: number,
+    @GetUser() superUser: PrismaUser,
   ) {
-    return this.usersService.update(
-      updateUserInput,
-      user,
-    );
+    return this.usersService.update(updateUserInput, targetUserId, superUser);
   }
 
-  @UseGuards(RolesGuard)
-  @Roles(Role.ADMIN,  Role.SUPER_ADMIN)
-  @Mutation(() => User, { name: 'removeUser' })
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @Mutation(() => GqlUser, { name: 'removeUser' })
   removeUser(
     @Args('id', { type: () => Int })
     targetUserId: number,
@@ -66,22 +53,15 @@ export class UsersResolver {
     return this.usersService.remove(targetUserId);
   }
 
-  @UseGuards(RolesGuard)
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
-  @Query(() => User, { name: 'user' })
-  findOne(
-    @Args('id', { type: () => Int }) id: number,
-  ) {
+  @Query(() => GqlUser, { name: 'user' })
+  findOne(@Args('id', { type: () => Int }) id: number) {
     return this.usersService.findOne(id);
   }
 
-  @UseGuards(RolesGuard)
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
-  @Query(() => [User], { name: 'users' })
-  findAll(
-    @Args('role', { nullable: true }) role?: Role,
-    @CurrentEnv() envId?: number,
-  ) {
+  @Query(() => [GqlUser], { name: 'users' })
+  findAll(@Args('role', { nullable: true }) role?: Role, @CurrentEnv() envId?: number) {
     return this.usersService.findAll(role, envId);
   }
 }

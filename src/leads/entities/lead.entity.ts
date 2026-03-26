@@ -30,7 +30,7 @@ export class Lead {
   source: string;
 
   @Field(() => Int, {nullable: true})
-  environmentId: number;
+  environmentId?: number;
 
   @Field(() => Int, { nullable: true })
   agentId?: number;
