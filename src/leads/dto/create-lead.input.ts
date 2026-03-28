@@ -1,13 +1,5 @@
-import {
-  InputType,
-  Int,
-  Field,
-} from '@nestjs/graphql';
-import {
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-} from 'class-validator';
+import { InputType, Int, Field } from '@nestjs/graphql';
+import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 @InputType()
 export class CreateLeadInput {

@@ -8,8 +8,8 @@ import { LeadChecklistResponse } from 'src/lead-checklist-responses/entities/lea
 
 @ObjectType()
 export class Lead {
-  @Field(() => Int)
-  id: number;
+  @Field(() => Int, { nullable: true })
+  id?: number;
 
   @Field({ nullable: true })
   firstName?: string;
@@ -20,14 +20,14 @@ export class Lead {
   @Field({ nullable: true })
   email?: string;
 
-  @Field()
-  phone: string;
+  @Field({nullable: true})
+  phone?: string;
 
   @Field(() => Int, { nullable: true })
   stepId?: number;
 
-  @Field()
-  source: string;
+  @Field({nullable: true})
+  source?: string;
 
   @Field(() => Int, {nullable: true})
   environmentId?: number;

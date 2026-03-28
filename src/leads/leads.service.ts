@@ -17,7 +17,7 @@ import { Queue } from 'bullmq';
 export class LeadsService {
   constructor(
     private prisma: PrismaService,
-    @InjectQueue('emails') private emailsQueuee: Queue,
+    @InjectQueue('emails') private emailsQueue: Queue,
   ) {}
 
   private async validateWorkflowTransition(leadId: number, newStepId: number) {
@@ -81,7 +81,7 @@ export class LeadsService {
       },
     });
     if (newLead.email) {
-      await this.emailsQueuee.add(
+      await this.emailsQueue.add(
         'send-welcome-email',
         {
           leadId: newLead.id,

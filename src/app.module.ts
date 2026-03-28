@@ -14,6 +14,7 @@ import { LeadChecklistResponsesModule } from './lead-checklist-responses/lead-ch
 import { TicketsModule } from './tickets/tickets.module';
 import { BullModule } from '@nestjs/bullmq';
 import { config } from 'process';
+import { WebhooksModule } from './webhooks/webhooks.module';
 
 @Module({
   imports: [
@@ -52,6 +53,7 @@ import { config } from 'process';
     ChecklistItemsModule,
     LeadChecklistResponsesModule,
     TicketsModule,
+    WebhooksModule,
   ],
 })
 export class AppModule {}
