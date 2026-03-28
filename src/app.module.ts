@@ -15,6 +15,9 @@ import { TicketsModule } from './tickets/tickets.module';
 import { BullModule } from '@nestjs/bullmq';
 import { config } from 'process';
 import { WebhooksModule } from './webhooks/webhooks.module';
+import { DashboardService } from './dashboard/dashboard.service';
+import { DashboardResolver } from './dashboard/dashboard.resolver';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -54,6 +57,7 @@ import { WebhooksModule } from './webhooks/webhooks.module';
     LeadChecklistResponsesModule,
     TicketsModule,
     WebhooksModule,
+    DashboardModule,
   ],
 })
 export class AppModule {}

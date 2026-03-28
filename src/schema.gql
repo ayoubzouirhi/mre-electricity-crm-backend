@@ -95,6 +95,25 @@ type Ticket {
   creatorId: Int
 }
 
+type LeadsBySource {
+  source: String!
+  count: Int!
+}
+
+type TicketsByStatus {
+  status: String!
+  count: Int!
+}
+
+type DashboardStats {
+  totalLeads: Int!
+  leadsCreatedThisMonth: Int!
+  leadsBySource: [LeadsBySource!]!
+  totalTickets: Int!
+  openTickets: Int!
+  ticketsByStatus: [TicketsByStatus!]!
+}
+
 type Query {
   me: User!
   user(id: Int!): User!
@@ -111,6 +130,7 @@ type Query {
   leadChecklistResponse(id: Int!): LeadChecklistResponse!
   tickets(take: Int! = 10, skip: Int! = 0): [Ticket!]!
   ticket(id: Int!): Ticket!
+  dashboardStats: DashboardStats!
 }
 
 type Mutation {
