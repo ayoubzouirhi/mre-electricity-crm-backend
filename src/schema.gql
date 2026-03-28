@@ -53,13 +53,13 @@ type LeadChecklistResponse {
 }
 
 type Lead {
-  id: Int!
+  id: Int
   firstName: String
   lastName: String
   email: String
-  phone: String!
+  phone: String
   stepId: Int
-  source: String!
+  source: String
   environmentId: Int
   agentId: Int
   leadChecklistResponses: [LeadChecklistResponse!]

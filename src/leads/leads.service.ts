@@ -10,10 +10,16 @@ import { UpdateLeadInput } from './dto/update-lead.input';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { User } from 'src/users/entities/user.entity';
 import { Prisma, Role } from '@prisma/client';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 
 @Injectable()
 export class LeadsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    @InjectQueue('emails') private emailsQueue: Queue,
+  ) {}
+
   private async validateWorkflowTransition(leadId: number, newStepId: number) {
     const requiredChecklist = await this.prisma.checklistItem.findMany({
       where: {
@@ -42,6 +48,7 @@ export class LeadsService {
       }
     }
   }
+
   async create(createLeadInput: CreateLeadInput, envId: number, userId: number) {
     const orConditions: Prisma.LeadWhereInput[] = [{ phone: createLeadInput.phone }];
     if (createLeadInput.email) {
@@ -66,13 +73,31 @@ export class LeadsService {
           existingLead.phone === createLeadInput.phone ? existingLead.phone : existingLead.email,
       });
     }
-    return this.prisma.lead.create({
+    const newLead = await this.prisma.lead.create({
       data: {
         ...createLeadInput,
         environmentId: envId,
         agentId: userId,
       },
     });
+    if (newLead.email) {
+      await this.emailsQueue.add(
+        'send-welcome-email',
+        {
+          leadId: newLead.id,
+          email: newLead.email,
+          firstName: newLead.firstName,
+        },
+        {
+          attempts: 3,
+          backoff: {
+            type: 'exponential',
+            delay: 5000,
+          },
+        },
+      );
+    }
+    return newLead;
   }
 
   async findAll(envId: number, user: User, paginationArgs: PaginationArgs) {
