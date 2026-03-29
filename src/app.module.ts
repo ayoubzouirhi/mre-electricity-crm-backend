@@ -25,6 +25,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
       driver: ApolloDriver,
       autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
       playground: true,
+      installSubscriptionHandlers: true,
       context: ({ req }) => {
         const envIdRaw = req.headers['x-environment-id'];
         const envId = envIdRaw ? parseInt(envIdRaw as string, 10) : null;

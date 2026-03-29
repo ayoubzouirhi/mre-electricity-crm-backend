@@ -1,4 +1,4 @@
-import { Resolver, Query, Mutation, Args, Int } from '@nestjs/graphql';
+import { Resolver, Query, Mutation, Args, Int, Subscription } from '@nestjs/graphql';
 import { LeadsService } from './leads.service';
 import { Lead } from './entities/lead.entity';
 import { CreateLeadInput } from './dto/create-lead.input';
@@ -10,12 +10,13 @@ import { CurrentEnv, GetUser, Roles } from 'src/common/decorator';
 import { Role } from '@prisma/client';
 import { User } from 'src/users/entities/user.entity';
 import { PaginationArgs } from 'src/common/pagination.args';
+import { pubsub } from 'src/common/pubsub';
 
-@UseGuards(GqlAuthGuard, RolesGuard)
 @Resolver(() => Lead)
 export class LeadsResolver {
   constructor(private readonly leadsService: LeadsService) {}
 
+  @UseGuards(GqlAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.RESPONSABLE, Role.AGENT)
   @Mutation(() => Lead)
   createLead(
@@ -27,6 +28,7 @@ export class LeadsResolver {
     return this.leadsService.create(createLeadInput, envId, userId);
   }
 
+  @UseGuards(GqlAuthGuard, RolesGuard)
   @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.RESPONSABLE, Role.AGENT)
   @Query(() => [Lead], { name: 'leads' })
   findAll(
@@ -37,6 +39,7 @@ export class LeadsResolver {
     return this.leadsService.findAll(envId, user, paginationArgs);
   }
 
+  @UseGuards(GqlAuthGuard, RolesGuard)
   @Roles(Role.SUPER_ADMIN, Role.ADMIN, Role.RESPONSABLE, Role.AGENT)
   @Query(() => Lead, { name: 'leadByEnv' })
   findOne(
@@ -50,7 +53,7 @@ export class LeadsResolver {
     return this.leadsService.findOne(user, envId, leadId);
   }
 
-  @UseGuards(RolesGuard)
+  @UseGuards(GqlAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.RESPONSABLE, Role.SUPER_ADMIN, Role.AGENT)
   @Mutation(() => Lead)
   updateLead(
@@ -64,6 +67,7 @@ export class LeadsResolver {
     return this.leadsService.update(updateLeadInput, user, leadId, envId);
   }
 
+  @UseGuards(GqlAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
   @Mutation(() => Lead)
   removeLead(
@@ -72,5 +76,15 @@ export class LeadsResolver {
     @CurrentEnv() envId: number,
   ) {
     return this.leadsService.remove(id, envId);
+  }
+
+  @Subscription(() => Lead, {
+    name: 'leadAdded',
+    filter: (payload, variables, context) => {
+      return true;
+    },
+  })
+  leadAdded() {
+    return pubsub.asyncIterableIterator('leadAdded');
   }
 }

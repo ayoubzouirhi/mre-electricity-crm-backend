@@ -275,3 +275,7 @@ input UpdateTicketInput {
   leadId: Int
   assigneeId: Int
 }
+
+type Subscription {
+  leadAdded: Lead!
+}

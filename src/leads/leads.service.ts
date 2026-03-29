@@ -12,6 +12,7 @@ import { User } from 'src/users/entities/user.entity';
 import { Prisma, Role } from '@prisma/client';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
+import { pubsub } from 'src/common/pubsub';
 
 @Injectable()
 export class LeadsService {
@@ -97,6 +98,7 @@ export class LeadsService {
         },
       );
     }
+    pubsub.publish('leadAdded', {leadAdded: newLead});
     return newLead;
   }
 
