@@ -8,7 +8,6 @@ import { Role } from 'src/auth/enums';
 @ObjectType()
 export class User {
   @Field(() => Int, {
-    description: 'Example field (placeholder)',
   })
   id: number;
 

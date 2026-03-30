@@ -3,7 +3,6 @@
 # ------------------------------------------------------
 
 type User {
-  """Example field (placeholder)"""
   id: Int!
   email: String!
   firstname: String
