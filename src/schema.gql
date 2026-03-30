@@ -3,7 +3,6 @@
 # ------------------------------------------------------
 
 type User {
-  """Example field (placeholder)"""
   id: Int!
   email: String!
   firstname: String
@@ -274,4 +273,8 @@ input UpdateTicketInput {
   dueDate: DateTime
   leadId: Int
   assigneeId: Int
+}
+
+type Subscription {
+  leadAdded: Lead!
 }

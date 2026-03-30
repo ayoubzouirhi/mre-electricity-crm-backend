@@ -46,6 +46,7 @@ export class AuthService {
           'Credentials taken',
         );
       }
+      throw error;
     }
   }
 
